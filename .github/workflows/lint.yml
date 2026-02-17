@@ -1,0 +1,48 @@
+name: Swift Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  swiftlint:
+    name: SwiftLint
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  swift-format:
+    name: Swift Format Check
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install swift-format
+        run: brew install swift-format
+
+      - name: Check formatting
+        run: |
+          swift-format lint --strict --recursive Sources/ Tests/ \
+            && echo "✅ Formatting is correct" \
+            || (echo "❌ Formatting issues found. Run 'swift-format format --recursive Sources/ Tests/' locally." && exit 1)
+
+  build-check:
+    name: Build Validation
+    runs-on: macos-latest
+    needs: [swiftlint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build project
+        run: xcodebuild build -scheme YourScheme -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet
